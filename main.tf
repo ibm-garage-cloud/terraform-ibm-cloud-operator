@@ -61,16 +61,3 @@ resource "helm_release" "ibmcloud-operator" {
 
   values = [local_file.ibmcloud-operator-values.content]
 }
-
-resource "null_resource" "wait-for-config-job" {
-  depends_on = [helm_release.sonarqube]
-  count = var.mode != "setup" ? 1 : 0
-
-  provisioner "local-exec" {
-    command = "kubectl wait -n ${var.releases_namespace} --for=condition=complete --timeout=30m job -l app=sonarqube"
-
-    environment = {
-      KUBECONFIG = var.cluster_config_file
-    }
-  }
-}
