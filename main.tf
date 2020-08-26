@@ -33,7 +33,7 @@ resource "local_file" "ibmcloud-operator-values" {
 
   content  = yamlencode({
     global = local.global_config
-    ibmcloud-operator = local.ibmcloud_operator_config
+    ibmcloud-operator = local.cloud_operator_config
   })
   filename = "${local.chart_dir}/values.yaml"
 }
