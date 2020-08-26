@@ -8,7 +8,6 @@ locals {
   chart_dir    = "${local.gitops_dir}/cloud-operator"
   global_config    = {
     clusterType = var.cluster_type
-    ingressSubdomain = var.cluster_ingress_hostname
   }
   cloud_operator_config = {
     apiKey = var.ibmcloud_api_key
