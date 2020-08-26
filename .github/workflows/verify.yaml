@@ -56,6 +56,7 @@ jobs:
           cp -R ./.github/scripts/* /tmp/workspace
           cp -R ./test/stages/* /tmp/workspace
           cp -R . /tmp/workspace/module
+          ls -lA /tmp/workspace/module/scripts
 
       # Deploy
       - name: Deploy ${{ matrix.platform }}
