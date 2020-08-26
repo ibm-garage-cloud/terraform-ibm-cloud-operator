@@ -3,6 +3,14 @@ provider "ibm" {
   region  = var.region
 }
 
+provider "helm" {
+  version = ">= 1.1.1"
+
+  kubernetes {
+    config_path = var.cluster_config_file
+  }
+}
+
 locals {
   gitops_dir   = var.gitops_dir != "" ? var.gitops_dir : "${path.cwd}/gitops"
   chart_dir    = "${local.gitops_dir}/cloud-operator"
