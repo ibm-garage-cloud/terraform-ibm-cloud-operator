@@ -3,6 +3,21 @@ variable "cluster_config_file" {
   description = "Cluster config file for Kubernetes cluster."
 }
 
+variable "resource_group_name" {
+  type        = string
+  description = "The name of the resource group"
+}
+
+variable "region" {
+  type        = string
+  description = "The name of the region"
+}
+
+variable "ibmcloud_api_key" {
+  type        = string
+  description = "The apikey with access to the IBM Cloud"
+}
+
 variable "cluster_type" {
   type        = string
   description = "The type of cluster (openshift or kubernetes)"
@@ -21,18 +36,6 @@ variable "operator_namespace" {
 variable "app_namespace" {
   type        = string
   description = "Namespace where operators will be installed"
-}
-
-variable "ingress_subdomain" {
-  type        = string
-  description = "The subdomain for ingresses in the cluster"
-  default     = ""
-}
-
-variable "tls_secret_name" {
-  type        = string
-  description = "The name of the secret containing the TLS certificates"
-  default     = ""
 }
 
 variable "name" {

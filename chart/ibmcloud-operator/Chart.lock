@@ -1,0 +1,6 @@
+dependencies:
+- name: ibmcloud-operator
+  repository: https://ibm-garage-cloud.github.io/toolkit-charts/
+  version: 0.1.1
+digest: sha256:55940f465d82e9ac544c0d176ac7376125aa1de5805c08986bd7e167ab285e39
+generated: "2020-08-26T14:31:35.349168-05:00"

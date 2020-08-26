@@ -1,50 +1,76 @@
+provider "ibm" {
+  version = ">= 1.9.0"
+  region  = var.region
+}
+
 locals {
   gitops_dir   = var.gitops_dir != "" ? var.gitops_dir : "${path.cwd}/gitops"
   chart_dir    = "${local.gitops_dir}/cloud-operator"
-}
-
-resource "null_resource" "setup-gitops" {
-  provisioner "local-exec" {
-    command = "mkdir -p ${local.chart_dir}"
+  global_config    = {
+    clusterType = var.cluster_type
+    ingressSubdomain = var.cluster_ingress_hostname
+  }
+  cloud_operator_config = {
+    apiKey = var.ibmcloud_api_key
+    resourceGroup = var.resource_group_name
+    resourceGroupId = data.ibm_resource_group.resource_group.id
+    region = var.region
+    user = ""
   }
 }
 
-resource "null_resource" "build_subscription" {
-  depends_on = [null_resource.setup-gitops]
+data "ibm_resource_group" "resource_group" {
+  name = var.resource_group_name
+}
 
+resource "null_resource" "setup-chart" {
   provisioner "local-exec" {
-    command = "${path.module}/scripts/build-subscription.sh ${var.cluster_type} ${var.operator_namespace} ${var.olm_namespace} ${var.app_namespace}"
-
-    environment = {
-      OUTPUT_DIR = local.chart_dir
-    }
+    command = "mkdir -p ${local.chart_dir} && cp -R ${path.module}/chart/ibmcloud-operator/* ${local.chart_dir}"
   }
 }
 
-resource "null_resource" "deploy_cloud_operator" {
+resource "local_file" "ibmcloud-operator-values" {
+  depends_on = [null_resource.setup-chart]
+
+  content  = yamlencode({
+    global = local.global_config
+    ibmcloud-operator = local.ibmcloud_operator_config
+  })
+  filename = "${local.chart_dir}/values.yaml"
+}
+
+resource "null_resource" "print-values" {
+  provisioner "local-exec" {
+    command = "cat ${local_file.ibmcloud-operator-values.filename}"
+  }
+}
+
+resource "helm_release" "ibmcloud-operator" {
+  depends_on = [local_file.ibmcloud-operator-values]
   count = var.mode != "setup" ? 1 : 0
-  depends_on = [null_resource.build_subscription]
 
-  triggers = {
-    KUBECONFIG = var.cluster_config_file
-    CHART_DIR  = local.chart_dir
-  }
+  name              = "ibmcloud-operator"
+  chart             = local.chart_dir
+  namespace         = var.app_namespace
+  timeout           = 1200
+  dependency_update = true
+  force_update      = true
+  replace           = true
+
+  disable_openapi_validation = true
+
+  values = [local_file.ibmcloud-operator-values.content]
+}
+
+resource "null_resource" "wait-for-config-job" {
+  depends_on = [helm_release.sonarqube]
+  count = var.mode != "setup" ? 1 : 0
 
   provisioner "local-exec" {
-    command = "kubectl apply -f ${self.triggers.CHART_DIR}"
+    command = "kubectl wait -n ${var.releases_namespace} --for=condition=complete --timeout=30m job -l app=sonarqube"
 
     environment = {
-      KUBECONFIG = self.triggers.KUBECONFIG
-    }
-  }
-
-  provisioner "local-exec" {
-    when = destroy
-
-    command = "kubectl delete -f ${self.triggers.CHART_DIR}"
-
-    environment = {
-      KUBECONFIG = self.triggers.KUBECONFIG
+      KUBECONFIG = var.cluster_config_file
     }
   }
 }
